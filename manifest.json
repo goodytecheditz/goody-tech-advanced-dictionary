@@ -9,7 +9,11 @@
   "orientation": "portrait",
   "background_color": "#080d19",
   "theme_color": "#080d19",
-  "categories": ["education", "books", "utilities"],
+  "categories": [
+    "education",
+    "books",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "./icon.svg",
