@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "goody-tech-dictionary-v2";
+const CACHE_NAME = "goody-tech-dictionary-v3";
 
 const FILES = [
   "./",
@@ -26,9 +26,8 @@ self.addEventListener("activate", event => {
           .filter(key => key.startsWith("goody-tech-dictionary-") && key !== CACHE_NAME)
           .map(key => caches.delete(key))
       )
-    )
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener("fetch", event => {
@@ -38,19 +37,30 @@ self.addEventListener("fetch", event => {
 
   if (url.origin !== self.location.origin) return;
 
+  const isAppFile =
+    url.pathname.endsWith(".js") ||
+    url.pathname.endsWith(".html") ||
+    url.pathname.endsWith(".css") ||
+    event.request.mode === "navigate";
+
+  if (isAppFile) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then(cached => {
-      if (cached) return cached;
-
-      return fetch(event.request).then(response => {
-        if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, copy);
-          });
-        }
-        return response;
-      });
+      return cached || fetch(event.request);
     })
   );
 });
